@@ -1,0 +1,216 @@
+import { defineSoftwareMap } from "@dev.fast/progressive-review/software-map-model";
+
+export default defineSoftwareMap({
+  people: {
+    author: {
+      label: "Review author",
+      description: "Authors progressive code reviews with a coding agent.",
+    },
+    reviewer: {
+      label: "Reviewer",
+      description: "Reads a Review and follows its code, trace, and map context.",
+    },
+  },
+  systems: {
+    review: {
+      label: "Review",
+      description:
+        "Authors, serves, and renders progressive code reviews and their software maps.",
+      containers: {
+        core: {
+          label: "Review CLI and runtime",
+          description:
+            "Coordinates authoring agents, review storage, local servers, publishing, and software maps.",
+          components: {
+            orchestration: {
+              label: "Review orchestration",
+              description:
+                "Implements the CLI, authoring lifecycle, native agent sessions, server APIs, and review persistence.",
+              coverage: { globs: ["packages/progressive-review/src/**"] },
+            },
+          },
+        },
+        canvas: {
+          label: "Review canvas",
+          description:
+            "Presents Review documents, diffs, traces, comments, and software maps in the browser or desktop shell.",
+          components: {
+            experience: {
+              label: "Review experience",
+              description: "Implements the React review-reading interface.",
+              coverage: { globs: ["packages/progressive-review/app/**"] },
+            },
+          },
+        },
+        guidance: {
+          label: "Agent guidance",
+          description:
+            "Teaches coding agents how to author Reviews and supplies the tutorial Review.",
+          components: {
+            authoringSkill: {
+              label: "Review authoring skill",
+              description: "Defines the agent workflow and tutorial assets.",
+              coverage: {
+                globs: [
+                  "packages/progressive-review/skills/**",
+                  "packages/progressive-review/tutorial/**",
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+    desktop: {
+      label: "Review Desktop",
+      description:
+        "Packages Review as a focused VS Code-derived desktop application.",
+      containers: {
+        shell: {
+          label: "Desktop shell",
+          description:
+            "Hosts the Review canvas, native editor integrations, and packaged runtime.",
+          components: {
+            host: {
+              label: "Desktop host",
+              description: "Builds and runs the branded Review Desktop application.",
+              coverage: { globs: ["apps/review-desktop/**"] },
+            },
+          },
+        },
+      },
+    },
+    localVcs: {
+      label: "Local VCS",
+      description: "Provides Git repository, notes, and locking operations.",
+      containers: {
+        library: {
+          label: "Local VCS library",
+          components: {
+            repository: {
+              label: "Repository operations",
+              description: "Reads and writes local Git state used by Review.",
+              coverage: { globs: ["packages/local-vcs/**"] },
+            },
+          },
+        },
+      },
+    },
+    reviewProtocol: {
+      label: "Review protocol",
+      description:
+        "Defines validated contracts shared by the Review runtime and desktop host.",
+      containers: {
+        library: {
+          label: "Protocol library",
+          components: {
+            contracts: {
+              label: "Review contracts",
+              coverage: { globs: ["packages/review-protocol/**"] },
+            },
+          },
+        },
+      },
+    },
+    traceProtocol: {
+      label: "Trace protocol",
+      description: "Defines the shared native-agent trace event contracts.",
+      containers: {
+        library: {
+          label: "Trace library",
+          components: {
+            contracts: {
+              label: "Trace contracts",
+              coverage: { globs: ["packages/trace-shared/**"] },
+            },
+          },
+        },
+      },
+    },
+    codingAgent: {
+      label: "Coding agent",
+      description:
+        "An external Claude Code, Codex, or Pi session that authors and updates a Review.",
+      external: true,
+    },
+    gitRepository: {
+      label: "Git repository",
+      description: "The external source repository and Git notes backing a Review.",
+      external: true,
+    },
+  },
+  relationships: [
+    {
+      kind: "semantic",
+      from: "author",
+      to: "review.guidance.authoringSkill",
+      label: "Invokes the authoring workflow",
+    },
+    {
+      kind: "semantic",
+      from: "review.guidance.authoringSkill",
+      to: "codingAgent",
+      label: "Guides",
+    },
+    {
+      kind: "semantic",
+      from: "codingAgent",
+      to: "review.core.orchestration",
+      label: "Authors through",
+    },
+    {
+      kind: "semantic",
+      from: "review.core.orchestration",
+      to: "review.canvas.experience",
+      label: "Serves review state",
+    },
+    {
+      kind: "semantic",
+      from: "reviewer",
+      to: "review.canvas.experience",
+      label: "Reads and comments",
+    },
+    {
+      kind: "semantic",
+      from: "desktop.shell.host",
+      to: "review.canvas.experience",
+      label: "Hosts",
+    },
+    {
+      kind: "semantic",
+      from: "desktop.shell.host",
+      to: "review.core.orchestration",
+      label: "Runs",
+    },
+    {
+      kind: "semantic",
+      from: "review.core.orchestration",
+      to: "localVcs.library.repository",
+      label: "Reads and writes repository state",
+    },
+    {
+      kind: "semantic",
+      from: "localVcs.library.repository",
+      to: "gitRepository",
+      label: "Operates on",
+    },
+    {
+      kind: "semantic",
+      from: "review.core.orchestration",
+      to: "reviewProtocol.library.contracts",
+      label: "Uses contracts",
+    },
+    {
+      kind: "semantic",
+      from: "desktop.shell.host",
+      to: "reviewProtocol.library.contracts",
+      label: "Uses contracts",
+    },
+    {
+      kind: "semantic",
+      from: "review.core.orchestration",
+      to: "traceProtocol.library.contracts",
+      label: "Emits agent traces",
+    },
+  ],
+});
